@@ -2,6 +2,9 @@
 
 std::map<int, int> LUT;
 
+#define padnum 13
+const char* padders[padnum] = {".", ",", "o", "*", "a", "x", "n", "m", "O", "0", "#", "N", "M",};
+
 void init_lut(){
     LUT[0x000000] = 0;
     LUT[0x800000] = 1;
@@ -311,17 +314,38 @@ int rgb_to_8bit(double r, double g, double b){
 }
 
 bool sortbyz(Polygon& lhs, Polygon& rhs){
-    return lhs.getlastz() < rhs.getlastz();
+    return lhs.getlastz() > rhs.getlastz();
 }
 
 int sgn(int x){
     return (x>0) ? 1 : (x<0) ? -1 : 0;
 }
 
-void fast_bresenham(Windowmanager &wm, int *raster, short *colors, int polyid, Vector3d& colorstart, Vector3d& colorend, int height, int xstart, int ystart, int xend, int yend){
+int findpad(int z){
+    
+    z += padnum/2 + 1;
+
+    if(z < 0){ z = 0;}
+    if(z > padnum-1){ z = padnum-1;}
+    return z;
+}
+
+void fast_bresenham(Windowmanager &wm, int *raster, short *colors, int polyid, Vector3d& colorstart, Vector3d& colorend, int height, int xstart, int ystart, int zstart, int xend, int yend, int zend){
 
     int x, y, t, dx, dy, incx, incy, pdx, pdy, ddx, ddy, deltaslowdir, deltafastdir, err;
     short color;
+    int zcolors = zstart, zcolore = zend;
+
+    if(zstart > 0){ 
+        zcolors = 0;
+    }else{
+        zcolors *= 5;
+    }
+    if(zend > 0){
+        zcolore = 0;
+    }else{
+        zcolore *= 5;
+    }
 
     // calc distances
     dx = xend-xstart;
@@ -357,8 +381,8 @@ void fast_bresenham(Windowmanager &wm, int *raster, short *colors, int polyid, V
     y = ystart;
     err = deltafastdir/2;
     
-    color = rgb_to_8bit(colorstart.x, colorstart.y, colorstart.z);
-    wm.printxyc(x, y, color, COLOR_BLACK, true, "#");
+    color = rgb_to_8bit(colorstart.x + zcolors, colorstart.y + zcolors, colorstart.z + zcolors);
+    wm.printxyc(x, y, color, COLOR_BLACK, true, padders[findpad(zstart)]);
     raster[y*height + x] = polyid;
     colors[y*height + x] = color;
 
@@ -379,15 +403,51 @@ void fast_bresenham(Windowmanager &wm, int *raster, short *colors, int polyid, V
         }
 
         float fast = static_cast<float>(deltafastdir);
-        float red = (((fast - t)/fast) * colorstart.x) + ((t/fast) * colorend.x);
-        float green = (((fast - t)/fast) * colorstart.y) + ((t/fast) * colorend.y);
-        float blue = (((fast - t)/fast) * colorstart.z) + ((t/fast) * colorend.z);
+        float red = (((fast - t)/fast) * (colorstart.x + zcolors)) + ((t/fast) * colorend.x + zcolore);
+        float green = (((fast - t)/fast) * (colorstart.y + zcolors)) + ((t/fast) * colorend.y + zcolore);
+        float blue = (((fast - t)/fast) * (colorstart.z + zcolors)) + ((t/fast) * colorend.z + zcolore);
+        int curz = (((fast - t)/fast) * zstart) + ((t/fast) * zend);
         color = rgb_to_8bit(red, green, blue);
         
         // rasterise the pixel
-        wm.printxyc(x, y, color, COLOR_BLACK, true, "#");
+        wm.printxyc(x, y, color, COLOR_BLACK, true, padders[findpad(curz)]);
         raster[y*height + x] = polyid;
         colors[y*height + x] = color;
+    }
+
+}
+int max(int a, int b, int c){
+    return a > b ? (a > c? a : c) : (b > c? b : c);
+}
+
+void fast_bresenham3d(Windowmanager &wm, Vector3d start, Vector3d end, Vector3d colorstart, Vector3d colorend, int polyid, int* raster, short* colors){
+
+    int x0 = static_cast<int>(start.x), x1 = static_cast<int>(end.x), y0 = static_cast<int>(start.y), y1 = static_cast<int>(end.y), z0 = static_cast<int>(start.z), z1 = static_cast<int>(end.z);
+    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int dz = abs(z1 - z0), sz = z0 < z1 ? 1 : -1;
+    int dm = max(dx,dy,dz), i = dm;
+    x1 = y1 = z1 = dm/2;
+    int red,green,blue;
+    short color;
+
+    for(;;){
+
+        red = (((i) / dm) * colorstart.x) + (((dm - i)/dm) * colorend.x);
+        green = (((i) / dm) * colorstart.y) + (((dm - i)/dm) * colorend.y);
+        blue = (((i) / dm) * colorstart.z) + (((dm - i)/dm) * colorend.z);
+        color = rgb_to_8bit(red, green, blue);
+        
+        wm.printxyc(x0,y0,COLOR_RED, COLOR_BLACK, true, "#");
+        raster[y0 + wm.screenheight + x0] = polyid;
+        colors[y0 + wm.screenheight + x0] = color;
+
+        if(i-- == 0) break;
+
+        x1 -= dx; if(x1 < 0){ x1 += dm; x0 += sx;}
+        y1 -= dy; if(y1 < 0){ y1 += dm; y0 += sy;}
+        z1 -= dz; if(z1 < 0){ z1 += dm; z0 += sz;}
+    
     }
 
 }
@@ -415,9 +475,9 @@ void render(Windowmanager &wm, Polygon poly){
     for(int i = 0; i < (wm.screenwidth * wm.screenheight); ++i){ colors[i] = -1;}
 
     // rasterise the polygon from a-b, b-c and c-a
-    fast_bresenham(wm, raster, colors, poly.polyid, poly.a_color, poly.b_color, wm.screenheight, poly.a.x, poly.a.y, poly.b.x, poly.b.y); 
-    fast_bresenham(wm, raster, colors, poly.polyid, poly.b_color, poly.c_color, wm.screenheight, poly.b.x, poly.b.y, poly.c.x, poly.c.y);
-    fast_bresenham(wm, raster, colors, poly.polyid, poly.c_color, poly.a_color, wm.screenheight, poly.c.x, poly.c.y, poly.a.x, poly.a.y);
+    fast_bresenham(wm, raster, colors, poly.polyid, poly.a_color, poly.b_color, wm.screenheight, poly.a.x, poly.a.y, poly.a.z, poly.b.x, poly.b.y, poly.b.z); 
+    fast_bresenham(wm, raster, colors, poly.polyid, poly.b_color, poly.c_color, wm.screenheight, poly.b.x, poly.b.y, poly.b.z, poly.c.x, poly.c.y, poly.c.z);
+    fast_bresenham(wm, raster, colors, poly.polyid, poly.c_color, poly.a_color, wm.screenheight, poly.c.x, poly.c.y, poly.c.z, poly.a.x, poly.a.y, poly.a.z);
  
     // find out if we see the front or the triangle, otherwise we dont need to draw it
     camera_len = camera_angle.lenght();
@@ -425,7 +485,7 @@ void render(Windowmanager &wm, Polygon poly){
     cosphi = camera_angle.scalar_product(poly.n) / (camera_len * n_len);
     angle = acos(cosphi) * 180.0 / PI;
 
-    // ṕrint if we need to
+    /* ṕrint if we need to
     if(angle <= 90){
 
         for(int y = 0; y < wm.screenheight; ++y){
@@ -460,6 +520,7 @@ void render(Windowmanager &wm, Polygon poly){
             
         }
     }
+    */
 
     delete []edges;
     delete []raster;

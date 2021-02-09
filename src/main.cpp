@@ -1,8 +1,81 @@
 #include "../include/main.hpp"
+#include <vector>
 
 #define FPS_REFRESH 1.0
 
 using namespace std;
+
+void move3dobject(Vector3d direction, std::vector<Polygon> &polygons){
+
+    for(std::vector<Polygon>::iterator i = polygons.begin(); i != polygons.end(); ++i){
+
+        (*i).a += direction;
+        (*i).b += direction;
+        (*i).c += direction;
+    }
+
+}
+
+
+void turn3dobject(Vector3d axis, double alpha,  std::vector<Polygon> &polygons){
+
+    std::vector<double> xs, ys, zs;
+    Vector3d center, ba, ca;
+    int j = 0;
+
+    for(std::vector<Polygon>::iterator i = polygons.begin(); i != polygons.end(); ++i){
+
+        xs.push_back((*i).a.x);
+        xs.push_back((*i).b.x);
+        xs.push_back((*i).c.x);
+ 
+        ys.push_back((*i).a.y);
+        ys.push_back((*i).b.y);
+        ys.push_back((*i).c.y);
+        
+        zs.push_back((*i).a.z);
+        zs.push_back((*i).b.z);
+        zs.push_back((*i).c.z);
+        
+        j++;
+    }
+
+    for( int k = 0; k < j; k++){ 
+
+        center.x += xs.back();
+        center.y += ys.back();
+        center.z += zs.back();
+    
+    }
+
+    center.x /= j;
+    center.y /= j;
+    center.z /= j;
+
+
+    for(std::vector<Polygon>::iterator i = polygons.begin(); i != polygons.end(); ++i){
+
+        (*i).a -= center;
+        (*i).b -= center;
+        (*i).c -= center;
+        
+        (*i).a.turnonaxis(axis, alpha);
+        (*i).b.turnonaxis(axis, alpha);
+        (*i).c.turnonaxis(axis, alpha);
+
+        (*i).a += center;
+        (*i).b += center;
+        (*i).c += center;
+
+        ba = (*i).a - (*i).b;
+        ca = (*i).a - (*i).c;
+
+        (*i).n = ba.cross_product(ca);
+        (*i).n = (*i).n.normalise();
+        
+   }
+
+}
 
 int main (){
 
@@ -17,10 +90,11 @@ int main (){
     keyhits.fill(0);	
 	auto start = std::chrono::system_clock::now();
     
-    // test polygon
-    Polygon testpoly(Vector3d(20,30,0),Vector3d(40,30,0),Vector3d(30,60,0), Vector3d(0,0,1), 69,Vector3d(255,0,0), Vector3d(0,255,0),Vector3d(0,0,255));
-    Polygon testpoly2(Vector3d(60,30,0),Vector3d(60,30,20),Vector3d(20,40,-10), Vector3d(0,0,1), 69,Vector3d(0,0,255), Vector3d(0,255,0),Vector3d(255,0,0));
-
+    //testpoly
+    std::vector<Polygon> polys;
+    polys.push_back(Polygon(Vector3d(20,30,12),Vector3d(40,30,-16),Vector3d(30,60,0), Vector3d(0,0,1), 69,Vector3d(255,0,0), Vector3d(0,255,0),Vector3d(0,0,255)));
+    polys.push_back(Polygon(Vector3d(40,30,-16),Vector3d(40,30,12),Vector3d(30,60,0), Vector3d(0,0,1), 69,Vector3d(255,0,0), Vector3d(0,255,0),Vector3d(0,0,255)));
+    polys.push_back(Polygon(Vector3d(40,30,12),Vector3d(20,30,12),Vector3d(30,60,0), Vector3d(0,0,1), 69,Vector3d(255,0,0), Vector3d(0,255,0),Vector3d(0,0,255)));
 
     // init lut
     init_lut();
@@ -35,38 +109,34 @@ int main (){
 		if(keyhits['q'] == 1){
 			break;
 		}if(keyhits['r'] == 1){
-            testpoly = Polygon(Vector3d(20,30,0),Vector3d(40,30,0),Vector3d(30,60,0), Vector3d(0,0,1), 69,Vector3d(255,0,0), Vector3d(0,255,0),Vector3d(0,0,255));
-            testpoly2 = Polygon(Vector3d(40,30,0),Vector3d(20,30,20),Vector3d(30,60,0), Vector3d(0,0,1), 69,Vector3d(0,0,255), Vector3d(0,255,0),Vector3d(255,0,0));
+            polys.clear();
+            polys.push_back(Polygon(Vector3d(20,30,12),Vector3d(40,30,-16),Vector3d(30,60,0), Vector3d(0,0,1), 69,Vector3d(255,0,0), Vector3d(0,255,0),Vector3d(0,0,255)));
+            polys.push_back(Polygon(Vector3d(40,30,-16),Vector3d(40,30,12),Vector3d(30,60,0), Vector3d(0,0,1), 69,Vector3d(255,0,0), Vector3d(0,255,0),Vector3d(0,0,255)));
+            polys.push_back(Polygon(Vector3d(40,30,12),Vector3d(20,30,12),Vector3d(30,60,0), Vector3d(0,0,1), 69,Vector3d(255,0,0), Vector3d(0,255,0),Vector3d(0,0,255)));
 		}if(keyhits['j'] == 1){ 
-            testpoly.turnonaxisinplace(Vector3d(0,1,0), 0.2);
-            testpoly2.turnonaxisinplace(Vector3d(0,1,0), 0.2);
+            turn3dobject(Vector3d(0,1,0), 0.2, polys);
 		}if(keyhits['l'] == 1){ 
-            testpoly.turnonaxisinplace(Vector3d(0,1,0), -0.2);
-            testpoly2.turnonaxisinplace(Vector3d(0,1,0), -0.2);
+            turn3dobject(Vector3d(0,1,0), -0.2, polys);
 		}if(keyhits['i'] == 1){ 
-            testpoly.turnonaxisinplace(Vector3d(1,0,0), 0.2);
-            testpoly2.turnonaxisinplace(Vector3d(1,0,0), 0.2);
+            turn3dobject(Vector3d(1,0,0), 0.2, polys);
 		}if(keyhits['k'] == 1){ 
-            testpoly.turnonaxisinplace(Vector3d(1,0,0), -0.2);
-            testpoly2.turnonaxisinplace(Vector3d(1,0,0), -0.2);
+            turn3dobject(Vector3d(1,0,0), -0.2, polys);
 		}if(keyhits['u'] == 1){
-            testpoly.turnonaxisinplace(Vector3d(0,0,1), 0.2);
-            testpoly2.turnonaxisinplace(Vector3d(0,0,1), 0.2);
+            turn3dobject(Vector3d(0,0,1), 0.2, polys);
 		}if(keyhits['o'] == 1){
-            testpoly.turnonaxisinplace(Vector3d(0,0,1), -0.2);
-            testpoly2.turnonaxisinplace(Vector3d(0,0,1), -0.2);
-		}
-
-        // test poly vector
-        std::vector<Polygon> polys;
-        polys.push_back(testpoly);
-//        polys.push_back(testpoly2);
+            turn3dobject(Vector3d(0,0,1), -0.2, polys);
+		}if(keyhits['t'] == 1){
+        }if(keyhits['w'] == 1){
+            move3dobject(Vector3d(0,-1,0), polys);
+        }if(keyhits['a'] == 1){
+            move3dobject(Vector3d(-1,0,0), polys);
+        }if(keyhits['s'] == 1){
+            move3dobject(Vector3d(0,1,0), polys);
+        }if(keyhits['d'] == 1){
+            move3dobject(Vector3d(1,0,0), polys);
+        }
 
         render_polygon(wm, polys); 
-
-        sprintf(buf, "Rendering poly with normal vector: %s ", testpoly.n.to_string().c_str());
-        wm.printxyc(0,3,COLOR_RED,COLOR_BLACK, true, buf);
-		
 
 		auto end = std::chrono::system_clock::now();
 		std::chrono::duration<double> elapsed = end - start;

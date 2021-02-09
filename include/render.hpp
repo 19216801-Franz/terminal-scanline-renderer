@@ -13,7 +13,7 @@
 void init_lut();
 int rgb_to_8bit(double r, double g, double b);
 bool sortbyz(Polygon& lhs, Polygon& rhs);
-void fast_bresenham(Windowmanager &wm, int *raster, short colors, int polyid, Vector3d& colorstart, Vector3d& colorend, int height, int xstart, int ystart, int xend, int yend);
+void fast_bresenham(Windowmanager &wm, int *raster, short colors, int polyid, Vector3d& colorstart, Vector3d& colorend, int height, int xstart, int ystart, int zstart, int xend, int yend, int zend);
 void render(Windowmanager &wm, Polygon poly);
 void render_polygon(Windowmanager &wm, std::vector<Polygon> polygons);
 
