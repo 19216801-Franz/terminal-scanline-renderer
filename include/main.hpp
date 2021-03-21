@@ -14,5 +14,6 @@
 #include "vector3d.hpp"
 #include "polygon.hpp"
 #include "render.hpp"
+#include "colorlut.hpp"
 
 #endif

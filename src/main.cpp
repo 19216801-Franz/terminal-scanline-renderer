@@ -1,7 +1,7 @@
 #include "../include/main.hpp"
-#include <vector>
 
 #define FPS_REFRESH 1.0
+#define FPS_PRINTLEN 9 // 8 chars + '\0+ '\0'
 
 using namespace std;
 
@@ -23,6 +23,7 @@ void turn3dobject(Vector3d axis, double alpha,  std::vector<Polygon> &polygons){
     Vector3d center, ba, ca;
     int j = 0;
 
+    //sum all vertex nodes up
     for(std::vector<Polygon>::iterator i = polygons.begin(); i != polygons.end(); ++i){
 
         xs.push_back((*i).a.x);
@@ -40,6 +41,7 @@ void turn3dobject(Vector3d axis, double alpha,  std::vector<Polygon> &polygons){
         j++;
     }
 
+    //calc median value to turn the objekt in-place and from a central point
     for( int k = 0; k < j; k++){ 
 
         center.x += xs.back();
@@ -53,6 +55,7 @@ void turn3dobject(Vector3d axis, double alpha,  std::vector<Polygon> &polygons){
     center.z /= j;
 
 
+    //move the object to (0,0,0), apply turning matrix and then move back to original coordinates
     for(std::vector<Polygon>::iterator i = polygons.begin(); i != polygons.end(); ++i){
 
         (*i).a -= center;
@@ -67,6 +70,7 @@ void turn3dobject(Vector3d axis, double alpha,  std::vector<Polygon> &polygons){
         (*i).b += center;
         (*i).c += center;
 
+        //update n
         ba = (*i).a - (*i).b;
         ca = (*i).a - (*i).c;
 
@@ -95,9 +99,6 @@ int main (){
     polys.push_back(Polygon(Vector3d(20,30,12),Vector3d(40,30,-16),Vector3d(30,60,0), Vector3d(0,0,1), 69,Vector3d(255,0,0), Vector3d(0,255,0),Vector3d(0,0,255)));
     polys.push_back(Polygon(Vector3d(40,30,-16),Vector3d(40,30,12),Vector3d(30,60,0), Vector3d(0,0,1), 69,Vector3d(255,0,0), Vector3d(0,255,0),Vector3d(0,0,255)));
     polys.push_back(Polygon(Vector3d(40,30,12),Vector3d(20,30,12),Vector3d(30,60,0), Vector3d(0,0,1), 69,Vector3d(255,0,0), Vector3d(0,255,0),Vector3d(0,0,255)));
-
-    // init lut
-    init_lut();
 
     // Main loop
 	while(true){
@@ -147,8 +148,8 @@ int main (){
 			fps = 0;
 		}		
 
-        sprintf(buf, "fps: %i", oldfps);
-        wm.printxyc(0,0, 12, COLOR_BLACK, true, buf);
+        snprintf(buf, FPS_PRINTLEN, "fps: %3i", oldfps);
+        wm.printxyc(0,0, ColorLut::getInstance().rgb_to_8bit(0,255,0), COLOR_BLACK, true, buf);
 
 		++fps;	
 

@@ -7,11 +7,10 @@
 #include "vector3d.hpp"
 #include "polygon.hpp"
 #include "windowmanager.hpp"
+#include "colorlut.hpp"
 
 #define PI 3.14159265
 
-void init_lut();
-int rgb_to_8bit(double r, double g, double b);
 bool sortbyz(Polygon& lhs, Polygon& rhs);
 void fast_bresenham(Windowmanager &wm, int *raster, short colors, int polyid, Vector3d& colorstart, Vector3d& colorend, int height, int xstart, int ystart, int zstart, int xend, int yend, int zend);
 void render(Windowmanager &wm, Polygon poly);
