@@ -3,16 +3,15 @@
 
 #include <ncurses.h>
 #include <map>
+#include "dimensions.hpp"
 
 class Windowmanager{
 
     public: 
          /* Members */
         int screenwidth, screenheight;
-        
 
         /* Methods */
-        Windowmanager();
         Windowmanager(int height, int width, int startx, int starty);
         ~Windowmanager();
         void printxyc(unsigned int x, unsigned int y, short text, short background, bool bold, const char* string);

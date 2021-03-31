@@ -1,23 +1,5 @@
 #include "../include/windowmanager.hpp"
 
-Windowmanager::Windowmanager(){
-
-    // initialise windows
-    this->mywindow = initscr();
-    // getch() nonblocking
-    nodelay(mywindow, TRUE);
-    // dont print inputs to screen
-    noecho();
-    // no cursor
-    curs_set(0);
-    start_color();
-    use_default_colors();
-    this->hascolor = (has_colors() == TRUE) ? true : false;
-    // set combination code iterator to default value over 1
-    combiterator = 3;
-
-}
-
 Windowmanager::Windowmanager(int height, int width, int startx, int starty){
 
     // initialise windows, this time also screen
@@ -43,7 +25,6 @@ Windowmanager::~Windowmanager(void){
 
     nodelay(mywindow, FALSE);
     endwin();
-
 }
 
 void Windowmanager::printxyc(unsigned int x, unsigned int y, short text, short background, bool bold, const char* string){    

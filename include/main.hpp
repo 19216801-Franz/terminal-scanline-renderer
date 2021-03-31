@@ -10,6 +10,10 @@
 #include <locale.h>
 #include <vector>
 #include <math.h>
+#include <fstream>
+#include <string>
+#include <sstream>
+#include "dimensions.hpp"
 #include "windowmanager.hpp"
 #include "vector3d.hpp"
 #include "polygon.hpp"
