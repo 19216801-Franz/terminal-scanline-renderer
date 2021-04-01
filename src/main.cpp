@@ -376,7 +376,7 @@ int main(int argc, char **argv)
     keyhits.fill(0);
     auto start = std::chrono::system_clock::now();
     auto last = start;
-    double deltaTime;
+    double deltaTime = 1;
 
     // Main loop
     while (true)
@@ -465,7 +465,7 @@ int main(int argc, char **argv)
 
         std::ostringstream stream;
         long distance = std::distance(polys.begin(), polys.end());
-        stream << "Currently rendering " << distance << " Polygons per iteration\n";
+        stream << "Currently rendering " << distance << " Polygons per iteration and detected " << std::to_string(hits) << " hits\n";
         wm.printxyc(0, 1, ColorLut::getInstance().rgb_to_8bit(255, 0, 0), COLOR_BLACK, true, stream.str().c_str());
 
         ++fps;
